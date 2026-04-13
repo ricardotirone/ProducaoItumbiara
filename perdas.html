@@ -1,0 +1,246 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.db{padding:1rem 0 2rem}
+.top-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:0.5px solid var(--color-border-tertiary)}
+.filter-label{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.btn-grp{display:flex;gap:3px}
+.fbtn{padding:5px 13px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:transparent;color:var(--color-text-secondary);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s}
+.fbtn:hover{background:var(--color-background-secondary)}
+.fbtn.on{background:#E6F1FB;color:#185FA5;border-color:#85B7EB;font-weight:500}
+.fbtn.on.ead{background:#E1F5EE;color:#085041;border-color:#5DCAA5}
+select{padding:5px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);font-size:12px;font-family:inherit;cursor:pointer}
+.kgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.25rem}
+.kcard{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:.9rem 1rem}
+.kl{font-size:11px;color:var(--color-text-secondary);margin-bottom:5px;line-height:1.3}
+.kv{font-size:21px;font-weight:500;color:var(--color-text-primary);line-height:1.1}
+.ks{font-size:11px;color:var(--color-text-tertiary);margin-top:3px}
+.hl{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;flex-shrink:0}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--color-text-secondary);align-items:center}
+.leg{display:flex;align-items:center}
+.cc{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:.9rem 1rem;margin-bottom:12px}
+.ch2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.ct{font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px}
+.ct2{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+table{width:100%;font-size:12px;border-collapse:collapse}
+th{padding:7px 10px;font-size:11px;font-weight:500;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);text-align:left}
+td{padding:6px 10px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary)}
+.bd{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500}
+.bp{background:#E6F1FB;color:#185FA5}
+.be{background:#E1F5EE;color:#085041}
+.kcard.accent-pres{border-left:3px solid #185FA5}
+.kcard.accent-ead{border-left:3px solid #1D9E75}
+.kcard.accent-tot{border-left:3px solid #BA7517}
+.kcard.accent-vg{border-left:3px solid #7F77DD}
+@media(max-width:600px){.kgrid{grid-template-columns:repeat(2,1fr)}.ch2{grid-template-columns:1fr}}
+</style>
+<div class="db">
+<div class="top-bar">
+  <span class="filter-label">Modalidade</span>
+  <div class="btn-grp">
+    <button class="fbtn on" id="bAll" onclick="sm('all',this)">Todas</button>
+    <button class="fbtn" id="bPres" onclick="sm('Presencial',this)">Presencial</button>
+    <button class="fbtn" id="bEAD" onclick="sm('EAD',this)">EAD</button>
+  </div>
+  <span class="filter-label" style="margin-left:8px">Cidade</span>
+  <select id="sCid" onchange="upd()">
+    <option value="all">Todas</option>
+    <option>Itumbiara</option>
+    <option>Morrinhos</option>
+    <option>Bom Jesus</option>
+    <option>Goiatuba</option>
+  </select>
+  <span class="filter-label" style="margin-left:8px">Curso</span>
+  <select id="sCur" onchange="upd()"><option value="all">Todos</option></select>
+</div>
+
+<div class="kgrid">
+  <div class="kcard accent-tot">
+    <div class="kl">Receita total potencial</div>
+    <div class="kv" id="k1">—</div>
+    <div class="ks">acumulado Mar/26–Dez/27</div>
+  </div>
+  <div class="kcard accent-pres">
+    <div class="kl">Pico de receita mensal</div>
+    <div class="kv" id="k2">—</div>
+    <div class="ks" id="k2s">—</div>
+  </div>
+  <div class="kcard accent-vg">
+    <div class="kl">Total de turmas</div>
+    <div class="kv" id="k3">—</div>
+    <div class="ks" id="k3s">—</div>
+  </div>
+  <div class="kcard accent-ead">
+    <div class="kl">Total de vagas</div>
+    <div class="kv" id="k4">—</div>
+    <div class="ks" id="k4s">—</div>
+  </div>
+</div>
+
+<div class="cc">
+  <div class="ct2">
+    <span class="ct">Receita mensal gerada por modalidade</span>
+    <div class="legend">
+      <span class="leg"><span class="hl" style="background:#185FA5"></span>Presencial</span>
+      <span class="leg"><span class="hl" style="background:#1D9E75"></span>EAD</span>
+    </div>
+  </div>
+  <div style="position:relative;width:100%;height:260px"><canvas id="cMain"></canvas></div>
+</div>
+
+<div class="ch2">
+  <div class="cc" style="margin-bottom:0">
+    <div class="ct2">
+      <span class="ct">Receita acumulada</span>
+      <div class="legend">
+        <span class="leg"><span class="hl" style="background:#BA7517"></span>Total</span>
+        <span class="leg"><span class="hl" style="background:#185FA5"></span>Pres.</span>
+        <span class="leg"><span class="hl" style="background:#1D9E75"></span>EAD</span>
+      </div>
+    </div>
+    <div style="position:relative;width:100%;height:190px"><canvas id="cAcc"></canvas></div>
+  </div>
+  <div class="cc" style="margin-bottom:0">
+    <div class="ct2">
+      <span class="ct">Turmas ativas por mês</span>
+      <div class="legend">
+        <span class="leg"><span class="hl" style="background:#185FA5"></span>Presencial</span>
+        <span class="leg"><span class="hl" style="background:#1D9E75"></span>EAD</span>
+      </div>
+    </div>
+    <div style="position:relative;width:100%;height:190px"><canvas id="cTur"></canvas></div>
+  </div>
+</div>
+
+<div class="cc" style="margin-bottom:0">
+  <div class="ct" style="margin-bottom:.75rem">Relação de turmas</div>
+  <div style="overflow-x:auto">
+  <table>
+    <thead><tr>
+      <th>Modalidade</th><th>Curso</th><th>Cidade</th><th>Início</th><th>Vagas</th><th>Mensalidade</th><th>Receita/mês</th>
+    </tr></thead>
+    <tbody id="tBody"></tbody>
+  </table>
+  </div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const MO=['Mar/26','Abr/26','Mai/26','Jun/26','Jul/26','Ago/26','Set/26','Out/26','Nov/26','Dez/26','Jan/27','Fev/27','Mar/27','Abr/27','Mai/27','Jun/27','Jul/27','Ago/27','Set/27','Out/27','Nov/27','Dez/27'];
+const DA=[
+  {m:'Presencial',c:'Téc. Desenvolvimento de Sistemas',ci:'Itumbiara',i:'Mar/26',v:30,mn:350,rm:12000,vals:[0,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,0]},
+  {m:'Presencial',c:'Téc. Agroindústria',ci:'Bom Jesus',i:'Abr/26',v:30,mn:350,rm:12000,vals:[0,0,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,0,0,0]},
+  {m:'Presencial',c:'Téc. Eletromecânica',ci:'Itumbiara',i:'Mai/26',v:30,mn:350,rm:12000,vals:[0,0,0,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000]},
+  {m:'Presencial',c:'Téc. Mecânica',ci:'Itumbiara',i:'Mai/26',v:30,mn:350,rm:12000,vals:[0,0,0,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000]},
+  {m:'Presencial',c:'Téc. Segurança do Trabalho',ci:'Morrinhos',i:'Mai/26',v:30,mn:350,rm:12000,vals:[0,0,0,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000]},
+  {m:'Presencial',c:'Téc. Alimentos',ci:'Itumbiara',i:'Mai/26',v:30,mn:350,rm:12000,vals:[0,0,0,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000]},
+  {m:'Presencial',c:'Téc. PCP',ci:'Itumbiara',i:'Mai/26',v:35,mn:350,rm:14000,vals:[0,0,0,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,0,0,0,0,0,0]},
+  {m:'Presencial',c:'Téc. Eletrotécnica',ci:'Itumbiara',i:'Mai/26',v:30,mn:350,rm:12000,vals:[0,0,0,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000]},
+  {m:'Presencial',c:'Téc. Administração',ci:'Itumbiara',i:'Jun/26',v:35,mn:350,rm:14000,vals:[0,0,0,0,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,0,0,0,0,0]},
+  {m:'Presencial',c:'Téc. Segurança do Trabalho',ci:'Itumbiara',i:'Jun/26',v:35,mn:350,rm:14000,vals:[0,0,0,0,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000]},
+  {m:'Presencial',c:'Téc. PCP',ci:'Morrinhos',i:'Jun/26',v:35,mn:350,rm:14000,vals:[0,0,0,0,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,0,0,0,0,0]},
+  {m:'Presencial',c:'Téc. PCP',ci:'Bom Jesus',i:'Jun/26',v:35,mn:350,rm:14000,vals:[0,0,0,0,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,0,0,0,0,0]},
+  {m:'Presencial',c:'Téc. Informática',ci:'Itumbiara',i:'Ago/26',v:30,mn:350,rm:12000,vals:[0,0,0,0,0,0,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000]},
+  {m:'Presencial',c:'Téc. Logística',ci:'Itumbiara',i:'Ago/26',v:35,mn:350,rm:14000,vals:[0,0,0,0,0,0,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000,14000]},
+  {m:'Presencial',c:'Téc. Automação Industrial',ci:'Itumbiara',i:'Ago/26',v:30,mn:350,rm:12000,vals:[0,0,0,0,0,0,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000]},
+  {m:'Presencial',c:'Téc. Eletrotécnica (2ª turma)',ci:'Itumbiara',i:'Set/26',v:30,mn:350,rm:12000,vals:[0,0,0,0,0,0,0,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000]},
+  {m:'Presencial',c:'Téc. Açúcar e Álcool',ci:'Itumbiara',i:'Out/26',v:30,mn:350,rm:12000,vals:[0,0,0,0,0,0,0,0,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000,12000]},
+  {m:'Presencial',c:'Téc. Mecatrônica',ci:'Itumbiara',i:'Out/26',v:25,mn:350,rm:10000,vals:[0,0,0,0,0,0,0,0,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000]},
+  {m:'Presencial',c:'Téc. Fabricação Mecânica',ci:'Itumbiara',i:'Nov/26',v:25,mn:350,rm:10000,vals:[0,0,0,0,0,0,0,0,0,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,10000]},
+  {m:'EAD',c:'Téc. Segurança do Trabalho',ci:'Itumbiara',i:'Mar/26',v:20,mn:280,rm:6000,vals:[0,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,0]},
+  {m:'EAD',c:'Téc. Química',ci:'Itumbiara',i:'Mar/26',v:20,mn:280,rm:6000,vals:[0,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,0]},
+  {m:'EAD',c:'Téc. Eletrotécnica',ci:'Morrinhos',i:'Abr/26',v:20,mn:280,rm:6000,vals:[0,0,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000]},
+  {m:'EAD',c:'Téc. Eletromecânica',ci:'Itumbiara',i:'Abr/26',v:20,mn:280,rm:6000,vals:[0,0,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000]},
+  {m:'EAD',c:'Téc. Fabricação Mecânica',ci:'Itumbiara',i:'Abr/26',v:20,mn:280,rm:6000,vals:[0,0,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000]},
+  {m:'EAD',c:'Téc. Açúcar e Álcool',ci:'Itumbiara',i:'Abr/26',v:20,mn:280,rm:6000,vals:[0,0,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000]},
+  {m:'EAD',c:'Téc. Eletrotécnica',ci:'Itumbiara',i:'Mai/26',v:20,mn:280,rm:6000,vals:[0,0,0,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000]},
+  {m:'EAD',c:'Téc. Segurança do Trabalho',ci:'Bom Jesus',i:'Mai/26',v:20,mn:280,rm:6000,vals:[0,0,0,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000]},
+  {m:'EAD',c:'Téc. Mecânica',ci:'Itumbiara',i:'Mai/26',v:20,mn:280,rm:6000,vals:[0,0,0,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000]},
+  {m:'EAD',c:'Téc. Logística',ci:'Morrinhos',i:'Mai/26',v:20,mn:280,rm:6000,vals:[0,0,0,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,0,0,0]},
+  {m:'EAD',c:'Téc. Segurança do Trabalho',ci:'Morrinhos',i:'Ago/26',v:20,mn:280,rm:6000,vals:[0,0,0,0,0,0,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000]},
+  {m:'EAD',c:'Téc. Eletrotécnica',ci:'Goiatuba',i:'Ago/26',v:20,mn:280,rm:6000,vals:[0,0,0,0,0,0,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000,6000]},
+];
+let fM='all',fC='all',fCu='all';
+const uniqC=[...new Set(DA.map(d=>d.c))].sort();
+const sc=document.getElementById('sCur');
+uniqC.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sc.appendChild(o);});
+function fmtR(n){if(n>=1e6)return'R$ '+(n/1e6).toFixed(2).replace('.',',')+'M';if(n>=1000)return'R$ '+(n/1000).toFixed(0)+'k';return'R$ '+Math.round(n).toLocaleString('pt-BR');}
+function fmtF(n){return'R$ '+Math.round(n).toLocaleString('pt-BR');}
+function gf(){return DA.filter(d=>(fM==='all'||d.m===fM)&&(fC==='all'||d.ci===fC)&&(fCu==='all'||d.c===fCu));}
+function mon(L){return MO.map((_,i)=>L.reduce((s,d)=>s+d.vals[i],0));}
+function acc(A){let a=0;return A.map(v=>a+=v);}
+const tickOpts={font:{size:9},maxRotation:45,autoSkip:true,maxTicksLimit:11};
+const gridC='rgba(128,128,128,0.1)';
+const cMain=new Chart(document.getElementById('cMain'),{
+  type:'bar',data:{labels:MO,datasets:[
+    {label:'Presencial',data:[],backgroundColor:'#185FA5',stack:'s'},
+    {label:'EAD',data:[],backgroundColor:'#1D9E75',stack:'s'}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtF(c.raw)}}},
+    scales:{x:{grid:{display:false},ticks:{...tickOpts,maxRotation:50,autoSkip:false,font:{size:9}}},
+      y:{grid:{color:gridC},ticks:{callback:v=>fmtR(v),font:{size:9}}}}}
+});
+const cAcc=new Chart(document.getElementById('cAcc'),{
+  type:'line',data:{labels:MO,datasets:[
+    {label:'Total',data:[],borderColor:'#BA7517',backgroundColor:'rgba(186,117,23,0.07)',fill:true,tension:.35,pointRadius:2,borderWidth:2},
+    {label:'Presencial',data:[],borderColor:'#185FA5',backgroundColor:'transparent',tension:.35,pointRadius:1.5,borderWidth:1.5},
+    {label:'EAD',data:[],borderColor:'#1D9E75',backgroundColor:'transparent',tension:.35,pointRadius:1.5,borderWidth:1.5}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtF(c.raw)}}},
+    scales:{x:{grid:{display:false},ticks:tickOpts},y:{grid:{color:gridC},ticks:{callback:v=>fmtR(v),font:{size:9}}}}}
+});
+const cTur=new Chart(document.getElementById('cTur'),{
+  type:'line',data:{labels:MO,datasets:[
+    {label:'Presencial',data:[],borderColor:'#185FA5',backgroundColor:'rgba(24,95,165,0.08)',fill:true,tension:.35,pointRadius:2,borderWidth:2},
+    {label:'EAD',data:[],borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.07)',fill:true,tension:.35,pointRadius:2,borderWidth:2}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} turmas`}}},
+    scales:{x:{grid:{display:false},ticks:tickOpts},y:{grid:{color:gridC},ticks:{stepSize:2,font:{size:9}}}}}
+});
+function sm(v,btn){
+  fM=v;
+  document.querySelectorAll('.btn-grp .fbtn').forEach(b=>{b.classList.remove('on','ead');});
+  btn.classList.add('on');
+  if(v==='EAD')btn.classList.add('ead');
+  upd();
+}
+function upd(){
+  fC=document.getElementById('sCid').value;
+  fCu=document.getElementById('sCur').value;
+  const F=gf();
+  const P=F.filter(d=>d.m==='Presencial'),E=F.filter(d=>d.m==='EAD');
+  const mP=mon(P),mE=mon(E),mT=MO.map((_,i)=>mP[i]+mE[i]);
+  const tot=mT.reduce((a,b)=>a+b,0);
+  const pico=Math.max(...mT);
+  const picoMes=MO[mT.indexOf(pico)];
+  document.getElementById('k1').textContent=fmtR(tot);
+  document.getElementById('k2').textContent=fmtR(pico);
+  document.getElementById('k2s').textContent='pico em '+picoMes;
+  document.getElementById('k3').textContent=F.length;
+  document.getElementById('k3s').textContent=P.length+' presencial · '+E.length+' EAD';
+  const vT=F.reduce((s,d)=>s+d.v,0);
+  document.getElementById('k4').textContent=vT.toLocaleString('pt-BR');
+  document.getElementById('k4s').textContent=P.reduce((s,d)=>s+d.v,0)+' pres · '+E.reduce((s,d)=>s+d.v,0)+' EAD';
+  cMain.data.datasets[0].data=mP;
+  cMain.data.datasets[1].data=mE;
+  cMain.update();
+  cAcc.data.datasets[0].data=acc(mT);
+  cAcc.data.datasets[1].data=acc(mP);
+  cAcc.data.datasets[2].data=acc(mE);
+  cAcc.update();
+  cTur.data.datasets[0].data=MO.map((_,i)=>P.filter(d=>d.vals[i]>0).length);
+  cTur.data.datasets[1].data=MO.map((_,i)=>E.filter(d=>d.vals[i]>0).length);
+  cTur.update();
+  const tb=document.getElementById('tBody');tb.innerHTML='';
+  F.forEach(d=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span class="bd ${d.m==='Presencial'?'bp':'be'}">${d.m}</span></td><td>${d.c}</td><td>${d.ci}</td><td>${d.i}</td><td style="text-align:center">${d.v}</td><td>R$ ${d.mn.toLocaleString('pt-BR')}</td><td style="font-weight:500">R$ ${d.rm.toLocaleString('pt-BR')}</td>`;
+    tb.appendChild(tr);
+  });
+}
+upd();
+</script>

@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Produção — Análise Crítica</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:#eef1f6;color:#1e293b;font-size:14px}
+
+/* HEADER */
+.main-header{background:#0f2444;color:#fff;padding:16px 28px;display:flex;align-items:center;justify-content:space-between}
+.main-header h1{font-size:17px;font-weight:700;letter-spacing:.3px}
+.main-header .sub{font-size:11px;opacity:.65;margin-top:3px}
+.header-badge{background:#1d4ed8;color:#fff;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.4px}
+
+/* NAV TABS */
+.nav-tabs{background:#fff;border-bottom:2px solid #e2e8f0;display:flex;padding:0 28px;gap:0;position:sticky;top:0;z-index:100}
+.nav-tab{padding:13px 22px;font-size:12px;font-weight:700;color:#94a3b8;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap}
+.nav-tab:hover{color:#1e293b;background:#f8fafc}
+.nav-tab.active{color:#1d4ed8;border-bottom-color:#1d4ed8}
+.nav-tab .tab-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px}
+
+/* SECTIONS */
+.section{display:none;padding:22px 28px 32px}
+.section.active{display:block}
+
+/* SECTION HEADER */
+.sec-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+.sec-title{font-size:15px;font-weight:700;color:#0f2444}
+.sec-subtitle{font-size:11px;color:#94a3b8;margin-top:3px}
+.sec-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:4px 10px;border-radius:5px}
+
+/* FILTER BAR */
+.filter-bar{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.filter-bar label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-right:4px}
+.filter-bar select{border:1px solid #cbd5e1;border-radius:6px;padding:5px 10px;font-size:12px;color:#1e293b;background:#fff;cursor:pointer;min-width:120px}
+.filter-bar select:focus{outline:none;border-color:#1d4ed8}
+.btn-reset{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.btn-reset:hover{background:#dbeafe}
+.filter-result{font-size:11px;color:#94a3b8;margin-left:auto;font-style:italic}
+
+/* KPI GRID */
+.kpi-grid{display:grid;gap:14px;margin-bottom:18px}
+.kpi-grid.cols-4{grid-template-columns:repeat(4,1fr)}
+.kpi-grid.cols-3{grid-template-columns:repeat(3,1fr)}
+.kpi-grid.cols-5{grid-template-columns:repeat(5,1fr)}
+.kpi{background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:15px 16px;position:relative;overflow:hidden}
+.kpi .accent{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:10px 0 0 10px}
+.kpi .k-label{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.kpi .k-val{font-size:26px;font-weight:700;color:#0f2444;line-height:1}
+.kpi .k-sub{font-size:11px;color:#94a3b8;margin-top:5px}
+.kpi .k-trend{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:3px 7px;border-radius:5px;margin-top:7px}
+.trend-up{background:#dcfce7;color:#15803d}
+.trend-down{background:#fee2e2;color:#b91c1c}
+.trend-warn{background:#fef9c3;color:#854d0e}
+.trend-neutral{background:#f1f5f9;color:#475569}
+.progress-bg{background:#e2e8f0;border-radius:8px;height:7px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;border-radius:8px}
+.progress-meta{display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-top:3px}
+
+/* CHART GRID */
+.chart-grid{display:grid;gap:14px;margin-bottom:18px}
+.chart-grid.cols-2{grid-template-columns:1fr 1fr}
+.chart-grid.cols-3{grid-template-columns:1fr 1fr 1fr}
+.chart-grid.c-2-1{grid-template-columns:2fr 1fr}
+.chart-grid.c-1-2{grid-template-columns:1fr 2fr}
+.chart-grid.cols-1{grid-template-columns:1fr}
+.chart-card{background:#fff;border-radius:10px;border:1px solid #e2e8f0;padding:16px 18px}
+.chart-card .c-title{font-size:12px;font-weight:700;color:#0f2444;margin-bottom:2px}
+.chart-card .c-sub{font-size:10px;color:#94a3b8;margin-bottom:12px}
+.legend-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#475569}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* GAUGE */
+.gauge-area{display:flex;flex-direction:column;align-items:center;padding:6px 0}
+.gauge-label-big{font-size:24px;font-weight:700;color:#0f2444;margin-top:-10px}
+.gauge-label-sub{font-size:10px;color:#94a3b8;margin-bottom:10px}
+.gauge-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.g-stat{background:#f8fafc;border-radius:8px;padding:8px 10px;text-align:center}
+.g-stat .gl{font-size:9px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:.4px}
+.g-stat .gv{font-size:16px;font-weight:700;color:#0f2444;margin-top:2px}
+
+/* DIVIDER */
+.section-divider{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;padding:6px 0 12px;border-bottom:1px solid #e2e8f0;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-divider::before{content:'';display:inline-block;width:3px;height:14px;background:#1d4ed8;border-radius:2px}
+
+/* TABLE INSIGHT */
+.insight-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.insight-card{background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px}
+.insight-card .i-title{font-size:10px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.insight-card .i-text{font-size:12px;color:#1e293b;line-height:1.5}
+.insight-card strong{font-weight:700}
+
+/* SPARKLINE */
+.spark-wrap{height:28px;margin-top:6px}
+
+@media(max-width:960px){
+  .kpi-grid.cols-4,.kpi-grid.cols-5{grid-template-columns:repeat(2,1fr)}
+  .chart-grid.cols-2,.chart-grid.cols-3,.chart-grid.c-2-1,.chart-grid.c-1-2{grid-template-columns:1fr}
+  .insight-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="main-header">
+  <div>
+    <div class="main-header h1" style="font-size:17px;font-weight:700">Análise Crítica de Desempenho — Produção Operacional</div>
+    <div class="sub">Itumbiara &amp; Quirinópolis · Matrículas · Concluintes · Evasão · Metas 2026</div>
+  </div>
+  <div style="text-align:right">
+    <div class="header-badge">Referência: 09/04/2026</div>
+    <div style="font-size:10px;opacity:.55;margin-top:5px">3 fontes de dados independentes</div>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" onclick="showTab('s1')" id="tab-s1">
+    <span class="tab-dot" style="background:#1d4ed8"></span>Seção 1 — Histórico de Produção
+  </div>
+  <div class="nav-tab" onclick="showTab('s2')" id="tab-s2">
+    <span class="tab-dot" style="background:#059669"></span>Seção 2 — Matrículas Novas 2026
+  </div>
+  <div class="nav-tab" onclick="showTab('s3')" id="tab-s3">
+    <span class="tab-dot" style="background:#7c3aed"></span>Seção 3 — Produção Detalhada
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SEÇÃO 1: HISTÓRICO DE PRODUÇÃO
+     ═══════════════════════════════════════════════════════ -->
+<div class="section active" id="s1">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title">Histórico de Produção — Visão Macro</div>
+      <div class="sec-subtitle">Fonte: Tabela "Historico_de_producao" · Dados por unidade e ano · 2023–2026</div>
+    </div>
+    <span class="sec-badge" style="background:#eff6ff;color:#1d4ed8">Visão Estratégica</span>
+  </div>
+
+  <div class="filter-bar">
+    <div><label>Unidade</label>
+      <select id="s1-unidade" onchange="renderS1()">
+        <option value="all">Todas</option>
+        <option value="Itumbiara">Itumbiara</option>
+        <option value="Quirinópolis">Quirinópolis</option>
+      </select>
+    </div>
+    <div><label>Ano</label>
+      <select id="s1-ano" onchange="renderS1()">
+        <option value="all">Todos</option>
+        <option value="2023">2023</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+      </select>
+    </div>
+    <button class="btn-reset" onclick="resetS1()">Limpar</button>
+    <span class="filter-result" id="s1-status"></span>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid cols-4">
+    <div class="kpi">
+      <div class="accent" style="background:#1d4ed8"></div>
+      <div class="k-label">Total Matrículas</div>
+      <div class="k-val" id="s1k-mat">—</div>
+      <div class="k-sub" id="s1k-mat-sub">Período selecionado</div>
+      <div class="k-trend trend-neutral" id="s1k-mat-trend" style="display:none"></div>
+    </div>
+    <div class="kpi">
+      <div class="accent" style="background:#059669"></div>
+      <div class="k-label">Total Concluintes</div>
+      <div class="k-val" id="s1k-conc">—</div>
+      <div class="k-sub">Taxa: <strong id="s1k-conc-taxa">—</strong></div>
+      <div class="spark-wrap"><canvas id="sp-conc" aria-label="Sparkline concluintes">Sparkline</canvas></div>
+    </div>
+    <div class="kpi">
+      <div class="accent" style="background:#dc2626"></div>
+      <div class="k-label">Total Evasões</div>
+      <div class="k-val" id="s1k-ev">—</div>
+      <div class="k-sub">Taxa: <strong id="s1k-ev-taxa">—</strong></div>
+      <div class="spark-wrap"><canvas id="sp-ev" aria-label="Sparkline evasões">Sparkline</canvas></div>
+    </div>
+    <div class="kpi">
+      <div class="accent" style="background:#d97706"></div>
+      <div class="k-label">Eficiência Geral</div>
+      <div class="k-val" id="s1k-ef">—</div>
+      <div class="k-sub">Concluintes / Matrículas</div>
+      <div class="k-trend" id="s1k-ef-trend" style="margin-top:7px">—</div>
+    </div>
+  </div>
+
+  <!-- Insights automáticos -->
+  <div class="insight-row" id="s1-insights"></div>
+
+  <div class="section-divider">Evolução Histórica</div>
+  <div class="chart-grid c-2-1">
+    <div class="chart-card">
+      <div class="c-title">Matrículas, Concluintes e Evasões por Ano</div>
+      <div class="c-sub">Comparativo ano a ano por unidade operacional</div>
+      <div class="legend-row" id="s1-leg1"></div>
+      <div style="position:relative;height:240px">
+        <canvas id="s1c1" role="img" aria-label="Barras agrupadas de produção por ano">Produção por ano.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">Participação por Unidade</div>
+      <div class="c-sub">Volume de matrículas no período</div>
+      <div style="position:relative;height:200px">
+        <canvas id="s1c2" role="img" aria-label="Donut de participação por unidade">Participação unidades.</canvas>
+      </div>
+      <div class="legend-row" id="s1-leg2" style="justify-content:center;margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div class="section-divider">Eficiência e Tendência</div>
+  <div class="chart-grid cols-2">
+    <div class="chart-card">
+      <div class="c-title">Taxa de Conclusão por Unidade e Ano</div>
+      <div class="c-sub">Concluintes / Matrículas · Semáforo: verde ≥60% · amarelo ≥40% · vermelho &lt;40%</div>
+      <div style="position:relative;height:220px">
+        <canvas id="s1c3" role="img" aria-label="Taxa de conclusão por unidade e ano">Taxa conclusão.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">Tendência de Evasão por Ano</div>
+      <div class="c-sub">Volume absoluto e taxa de evasão acumulada</div>
+      <div class="legend-row" id="s1-leg4"></div>
+      <div style="position:relative;height:210px">
+        <canvas id="s1c4" role="img" aria-label="Evolução da evasão por ano">Evasão por ano.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider">Comparativo Consolidado</div>
+  <div class="chart-grid cols-1">
+    <div class="chart-card">
+      <div class="c-title">Evolução Acumulada — Matrículas vs. Concluintes vs. Evasões (2023–2026)</div>
+      <div class="c-sub">Linhas de tendência consolidadas por unidade e período</div>
+      <div class="legend-row" id="s1-leg5"></div>
+      <div style="position:relative;height:220px">
+        <canvas id="s1c5" role="img" aria-label="Linhas de evolução consolidada">Evolução consolidada.</canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SEÇÃO 2: MATRÍCULAS NOVAS 2026
+     ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s2">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title">Matrículas Novas 2026 — Acompanhamento de Metas</div>
+      <div class="sec-subtitle">Fonte: Tabela "Matriculas_novas" · Apenas matrículas novas (sem remanescentes) · Até 09/04/2026</div>
+    </div>
+    <span class="sec-badge" style="background:#ecfdf5;color:#059669">Meta 2026</span>
+  </div>
+
+  <div class="filter-bar">
+    <div><label>Unidade</label>
+      <select id="s2-unidade" onchange="renderS2()">
+        <option value="all">Todas</option>
+        <option value="Itumbiara">Itumbiara</option>
+        <option value="Quirinópolis">Quirinópolis</option>
+      </select>
+    </div>
+    <div><label>Período</label>
+      <select id="s2-periodo" onchange="renderS2()">
+        <option value="real">Somente realizados (até abr)</option>
+        <option value="all">Todo o ano (c/ metas futuras)</option>
+      </select>
+    </div>
+    <button class="btn-reset" onclick="resetS2()">Limpar</button>
+    <span class="filter-result" id="s2-status"></span>
+  </div>
+
+  <!-- KPIs Seção 2 -->
+  <div class="kpi-grid cols-5">
+    <div class="kpi">
+      <div class="accent" style="background:#059669"></div>
+      <div class="k-label">Meta Anual Total</div>
+      <div class="k-val" id="s2k-meta">—</div>
+      <div class="k-sub">Total do ano 2026</div>
+    </div>
+    <div class="kpi">
+      <div class="accent" style="background:#1d4ed8"></div>
+      <div class="k-label">Realizado (até abr)</div>
+      <div class="k-val" id="s2k-real">—</div>
+      <div class="k-sub" id="s2k-real-sub">4 meses concluídos</div>
+    </div>
+    <div class="kpi">
+      <div class="accent" style="background:#d97706"></div>
+      <div class="k-label">Atingimento da Meta</div>
+      <div class="k-val" id="s2k-pct">—</div>
+      <div class="progress-bg"><div class="progress-fill" id="s2-prog" style="background:#059669"></div></div>
+      <div class="progress-meta"><span>0%</span><span id="s2-prog-gap">Gap: —</span><span>100%</span></div>
+    </div>
+    <div class="kpi">
+      <div class="accent" style="background:#dc2626"></div>
+      <div class="k-label">Gap Restante</div>
+      <div class="k-val" id="s2k-gap">—</div>
+      <div class="k-sub">Matrículas pendentes</div>
+      <div class="k-trend trend-warn" id="s2k-gap-mensal">—/mês necessário</div>
+    </div>
+    <div class="kpi">
+      <div class="accent" style="background:#7c3aed"></div>
+      <div class="k-label">Velocidade Média</div>
+      <div class="k-val" id="s2k-vel">—</div>
+      <div class="k-sub">Matrículas/mês (realizadas)</div>
+      <div class="k-trend" id="s2k-vel-trend">—</div>
+    </div>
+  </div>
+
+  <div class="insight-row" id="s2-insights"></div>
+
+  <div class="section-divider">Gauge de Atingimento e Ritmo Mensal</div>
+  <div class="chart-grid c-1-2">
+    <div class="chart-card">
+      <div class="c-title">Velocímetro — Atingimento da Meta Anual</div>
+      <div class="c-sub">% realizado até 09/04/2026</div>
+      <div class="gauge-area">
+        <canvas id="s2-gauge" width="240" height="140" role="img" aria-label="Gauge de atingimento de meta">Gauge.</canvas>
+        <div class="gauge-label-big" id="s2-gauge-pct">—</div>
+        <div class="gauge-label-sub">atingimento da meta anual</div>
+        <div class="gauge-stats">
+          <div class="g-stat"><div class="gl">Itumbiara Real.</div><div class="gv" id="g2-itu-r">—</div></div>
+          <div class="g-stat"><div class="gl">Itumbiara Meta</div><div class="gv" id="g2-itu-m">—</div></div>
+          <div class="g-stat"><div class="gl">Quirinópolis Real.</div><div class="gv" id="g2-qui-r">—</div></div>
+          <div class="g-stat"><div class="gl">Quirinópolis Meta</div><div class="gv" id="g2-qui-m">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">Meta vs. Realizado — Mês a Mês</div>
+      <div class="c-sub">Barras = Realizado · Linha tracejada = Meta do mês</div>
+      <div class="legend-row" id="s2-leg1"></div>
+      <div style="position:relative;height:240px">
+        <canvas id="s2c1" role="img" aria-label="Meta vs realizado mensal 2026">Meta vs realizado.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider">Análise de Cumprimento e Projeção</div>
+  <div class="chart-grid cols-2">
+    <div class="chart-card">
+      <div class="c-title">Atingimento Acumulado vs. Meta Acumulada</div>
+      <div class="c-sub">Curva de progresso no ano — realizado x esperado</div>
+      <div class="legend-row" id="s2-leg2"></div>
+      <div style="position:relative;height:220px">
+        <canvas id="s2c2" role="img" aria-label="Acumulado realizado vs meta">Acumulado.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">Gap Mensal por Unidade</div>
+      <div class="c-sub">Diferença entre meta e realizado em cada mês (meses futuros = meta inteira)</div>
+      <div class="legend-row" id="s2-leg3"></div>
+      <div style="position:relative;height:220px">
+        <canvas id="s2c3" role="img" aria-label="Gap mensal por unidade">Gap mensal.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-divider">Comparativo entre Unidades</div>
+  <div class="chart-grid cols-2">
+    <div class="chart-card">
+      <div class="c-title">% Atingimento por Mês — Itumbiara vs. Quirinópolis</div>
+      <div class="c-sub">Percentual de cumprimento da meta em cada mês realizado</div>
+      <div style="position:relative;height:220px">
+        <canvas id="s2c4" role="img" aria-label="Atingimento percentual mensal por unidade">% atingimento mensal.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">Distribuição da Meta Anual por Unidade</div>
+      <div class="c-sub">Peso de cada unidade na meta total consolidada</div>
+      <div style="position:relative;height:180px">
+        <canvas id="s2c5" role="img" aria-label="Distribuição da meta por unidade">Distribuição meta.</canvas>
+      </div>
+      <div class="legend-row" id="s2-leg5" style="justify-content:center;margin-top:10px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     SEÇÃO 3: PRODUÇÃO DETALHADA
+     ═══════════════════════════════════════════════════════ -->
+<div class="section" id="s3">
+  <div class="sec-header">
+    <div>
+      <div class="sec-title">Produção Detalhada — Drill-Down por Categoria, Modalidade e Tipo</div>
+      <div class="sec-subtitle">Fonte: Tabela "Producao_detalhada" · 2023–2026 · Matrículas totais por segmento</div>
+    </div>
+    <span class="sec-badge" style="background:#f5f3ff;color:#7c3aed">Análise Granular</span>
+  </div>
+
+  <div class="filter-bar">
+    <div><label>Unidade</label>
+      <select id="s3-unidade" onchange="renderS3()">
+        <option value="all">Todas</option>
+        <option value="Itumbiara">Itumbiara</option>
+        <option value="Quirinópolis">Quirinópolis</option>
+      </select>
+    </div>
+    <div><label>Ano</label>
+      <select id="s3-ano" onchange="renderS3()">
+        <option value="all">Todos</option>
+        <option value="2023">2023</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+      </select>
+    </div>
+    <div><label>Categoria</label>
+      <select id="s3-cat" onchange="renderS3()">
+        <option value="all">Todas</option>
+        <option value="Educação para o Trabalho">Ed. Trabalho</option>
+        <option value="Formação Inicial e Continuada">FIC</option>
+        <option value="Educação Técnica de Nível Médio">Ed. Técnica</option>
+      </select>
+    </div>
+    <div><label>Modalidade</label>
+      <select id="s3-mod" onchange="renderS3()">
+        <option value="all">Todas</option>
+        <option value="PRESENCIAL">Presencial</option>
+        <option value="EAD">EAD</option>
+      </select>
+    </div>
+    <button class="btn-reset" onclick="resetS3()">Limpar</button>
+    <span class="filter-result" id="s3-status"></span>
+  </div>
+
+  <!-- KPIs Seção 3 -->
+  <div class="kpi-grid cols-4">
+    <div class="kpi">
+      <div class="accent" style="background:#7c3aed"></div>
+      <div class="k-label">Total Matrículas</div>
+      <div class="k-val" id="s3k-mat">—</div>
+      <div class="k-sub" id="s3k-mat-sub">Período e filtros</div>
+    </div>
+    <div class="kpi">
+      <div class="accent" style="background:#1d4ed8"></div>
+      <div class="k-label">Categorias Ativas</div>
+      <div class="k-val" id="s3k-cats">—</div>
+      <div class="k-sub">Categorias com matrículas &gt; 0</div>
+    </div>
+    <div class="kpi">
+      <div class="accent" style="background:#059669"></div>
+      <div class="k-label">Tipo mais Relevante</div>
+      <div class="k-val" style="font-size:14px;line-height:1.3" id="s3k-top">—</div>
+      <div class="k-sub" id="s3k-top-vol">Volume —</div>
+    </div>
+    <div class="kpi">
+      <div class="accent" style="background:#d97706"></div>
+      <div class="k-label">% Crescimento YoY</div>
+      <div class="k-val" id="s3k-yoy">—</div>
+      <div class="k-sub">vs. ano anterior ao selecionado</div>
+      <div class="k-trend" id="s3k-yoy-trend" style="margin-top:7px">—</div>
+    </div>
+  </div>
+
+  <div class="insight-row" id="s3-insights"></div>
+
+  <div class="section-divider">Visão por Categoria</div>
+  <div class="chart-grid cols-2">
+    <div class="chart-card">
+      <div class="c-title">Matrículas por Categoria — Evolução Anual</div>
+      <div class="c-sub">Barras empilhadas por categoria (2023–2026)</div>
+      <div class="legend-row" id="s3-leg1"></div>
+      <div style="position:relative;height:230px">
+        <canvas id="s3c1" role="img" aria-label="Matrículas por categoria e ano">Categorias por ano.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">Participação por Categoria no Período</div>
+      <div class="c-sub">% de cada categoria no total de matrículas</div>
+      <div style="position:relative;height:200px">
+        <canvas id="s3c2" role="img" aria-label="Participação de categorias">Participação categorias.</canvas>
+      </div>
+      <div class="legend-row" id="s3-leg2" style="justify-content:center;margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div class="section-divider">Mix Presencial vs. EAD</div>
+  <div class="chart-grid cols-3">
+    <div class="chart-card">
+      <div class="c-title">Presencial vs. EAD — por Ano</div>
+      <div class="c-sub">Volume absoluto por modalidade</div>
+      <div class="legend-row" id="s3-leg3"></div>
+      <div style="position:relative;height:200px">
+        <canvas id="s3c3" role="img" aria-label="Presencial vs EAD por ano">Presencial x EAD.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">% EAD por Categoria</div>
+      <div class="c-sub">Penetração do EAD em cada categoria</div>
+      <div style="position:relative;height:200px">
+        <canvas id="s3c4" role="img" aria-label="% EAD por categoria">EAD por categoria.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">Distribuição Presencial × EAD</div>
+      <div class="c-sub">Comparação consolidada no período</div>
+      <div style="position:relative;height:180px">
+        <canvas id="s3c5" role="img" aria-label="Donut presencial EAD">Donut presencial/EAD.</canvas>
+      </div>
+      <div class="legend-row" id="s3-leg5" style="justify-content:center;margin-top:10px"></div>
+    </div>
+  </div>
+
+  <div class="section-divider">Top Tipos de Curso e Drill-Down</div>
+  <div class="chart-grid c-2-1">
+    <div class="chart-card">
+      <div class="c-title">Ranking de Tipos de Curso por Volume</div>
+      <div class="c-sub">Top 10 tipos ordenados por matrículas no período selecionado</div>
+      <div id="s3c6-wrap" style="position:relative">
+        <canvas id="s3c6" role="img" aria-label="Top tipos de curso">Ranking.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">Crescimento 2025 → 2026</div>
+      <div class="c-sub">Variação YoY por categoria (% de crescimento)</div>
+      <div style="position:relative;height:300px">
+        <canvas id="s3c7" role="img" aria-label="Crescimento YoY por categoria">Crescimento YoY.</canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ======================================================
+   DADOS
+====================================================== */
+const HIST = [
+  {u:'Itumbiara',a:2023,m:8764,c:7902,e:1068},
+  {u:'Itumbiara',a:2024,m:9326,c:7364,e:1185},
+  {u:'Itumbiara',a:2025,m:9248,c:6732,e:1618},
+  {u:'Itumbiara',a:2026,m:3148,c:1369,e:242},
+  {u:'Quirinópolis',a:2023,m:3230,c:2393,e:474},
+  {u:'Quirinópolis',a:2024,m:1982,c:1259,e:468},
+  {u:'Quirinópolis',a:2025,m:3035,c:2229,e:368},
+  {u:'Quirinópolis',a:2026,m:854,c:291,e:68},
+];
+
+const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const MAT = {
+  Itumbiara: {jan:{r:562,m:87},fev:{r:576,m:1024},mar:{r:1060,m:957},abr:{r:252,m:986},mai:{r:37,m:1023},jun:{r:10,m:966},jul:{r:0,m:901},ago:{r:11,m:1042},set:{r:1,m:1005},out:{r:0,m:943},nov:{r:0,m:1013},dez:{r:0,m:150}},
+  Quirinópolis: {jan:{r:153,m:60},fev:{r:144,m:237},mar:{r:138,m:273},abr:{r:81,m:287},mai:{r:0,m:289},jun:{r:0,m:308},jul:{r:0,m:227},ago:{r:3,m:356},set:{r:0,m:216},out:{r:1,m:237},nov:{r:0,m:227},dez:{r:0,m:40}},
+};
+
+const PROD = [
+  {u:'Itumbiara',a:2026,cat:'Educação para o Trabalho',mod:'Iniciação - PRESENCIAL',v:0},
+  {u:'Itumbiara',a:2026,cat:'Educação para o Trabalho',mod:'Iniciação - EAD',v:772},
+  {u:'Itumbiara',a:2026,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - PRESENCIAL',v:657},
+  {u:'Itumbiara',a:2026,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - EAD',v:29},
+  {u:'Itumbiara',a:2026,cat:'Formação Inicial e Continuada',mod:'Qualificação - PRESENCIAL',v:202},
+  {u:'Itumbiara',a:2026,cat:'Formação Inicial e Continuada',mod:'Qualificação - EAD',v:419},
+  {u:'Itumbiara',a:2026,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - PRESENCIAL',v:481},
+  {u:'Itumbiara',a:2026,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - EAD',v:143},
+  {u:'Itumbiara',a:2026,cat:'Educação Técnica de Nível Médio',mod:'Técnico - PRESENCIAL',v:194},
+  {u:'Itumbiara',a:2026,cat:'Educação Técnica de Nível Médio',mod:'Técnico - EAD',v:105},
+  {u:'Itumbiara',a:2026,cat:'Educação Técnica de Nível Médio',mod:'Novo Médio - PRESENCIAL',v:75},
+  {u:'Itumbiara',a:2026,cat:'Educação Técnica de Nível Médio',mod:'Novo Médio - SEDUC - PRESENCIAL',v:394},
+  {u:'Itumbiara',a:2025,cat:'Educação para o Trabalho',mod:'Iniciação - PRESENCIAL',v:64},
+  {u:'Itumbiara',a:2025,cat:'Educação para o Trabalho',mod:'Iniciação - EAD',v:2216},
+  {u:'Itumbiara',a:2025,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - PRESENCIAL',v:930},
+  {u:'Itumbiara',a:2025,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - EAD',v:45},
+  {u:'Itumbiara',a:2025,cat:'Formação Inicial e Continuada',mod:'Qualificação - PRESENCIAL',v:442},
+  {u:'Itumbiara',a:2025,cat:'Formação Inicial e Continuada',mod:'Qualificação - EAD',v:707},
+  {u:'Itumbiara',a:2025,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - PRESENCIAL',v:2951},
+  {u:'Itumbiara',a:2025,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - EAD',v:1223},
+  {u:'Itumbiara',a:2025,cat:'Educação Técnica de Nível Médio',mod:'Aprendizagem Técnica - PRESENCIAL',v:1},
+  {u:'Itumbiara',a:2025,cat:'Educação Técnica de Nível Médio',mod:'Técnico - PRESENCIAL',v:398},
+  {u:'Itumbiara',a:2025,cat:'Educação Técnica de Nível Médio',mod:'Técnico - EAD',v:194},
+  {u:'Itumbiara',a:2025,cat:'Educação Técnica de Nível Médio',mod:'Novo Médio - PRESENCIAL',v:74},
+  {u:'Itumbiara',a:2025,cat:'Educação Técnica de Nível Médio',mod:'Novo Médio - SEDUC - PRESENCIAL',v:291},
+  {u:'Itumbiara',a:2024,cat:'Educação para o Trabalho',mod:'Iniciação - PRESENCIAL',v:322},
+  {u:'Itumbiara',a:2024,cat:'Educação para o Trabalho',mod:'Iniciação - EAD',v:1946},
+  {u:'Itumbiara',a:2024,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - PRESENCIAL',v:841},
+  {u:'Itumbiara',a:2024,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - EAD',v:156},
+  {u:'Itumbiara',a:2024,cat:'Formação Inicial e Continuada',mod:'Qualificação - PRESENCIAL',v:463},
+  {u:'Itumbiara',a:2024,cat:'Formação Inicial e Continuada',mod:'Qualificação - EAD',v:1011},
+  {u:'Itumbiara',a:2024,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - PRESENCIAL',v:3774},
+  {u:'Itumbiara',a:2024,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - EAD',v:482},
+  {u:'Itumbiara',a:2024,cat:'Educação Técnica de Nível Médio',mod:'Aprendizagem Técnica - PRESENCIAL',v:4},
+  {u:'Itumbiara',a:2024,cat:'Educação Técnica de Nível Médio',mod:'Técnico - PRESENCIAL',v:220},
+  {u:'Itumbiara',a:2024,cat:'Educação Técnica de Nível Médio',mod:'Técnico - EAD',v:287},
+  {u:'Itumbiara',a:2024,cat:'Educação Técnica de Nível Médio',mod:'Novo Médio - PRESENCIAL',v:123},
+  {u:'Itumbiara',a:2023,cat:'Educação para o Trabalho',mod:'Iniciação - PRESENCIAL',v:442},
+  {u:'Itumbiara',a:2023,cat:'Educação para o Trabalho',mod:'Iniciação - EAD',v:2000},
+  {u:'Itumbiara',a:2023,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - PRESENCIAL',v:2045},
+  {u:'Itumbiara',a:2023,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - EAD',v:248},
+  {u:'Itumbiara',a:2023,cat:'Formação Inicial e Continuada',mod:'Qualificação - PRESENCIAL',v:368},
+  {u:'Itumbiara',a:2023,cat:'Formação Inicial e Continuada',mod:'Qualificação - EAD',v:920},
+  {u:'Itumbiara',a:2023,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - PRESENCIAL',v:2960},
+  {u:'Itumbiara',a:2023,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - EAD',v:385},
+  {u:'Itumbiara',a:2023,cat:'Educação Técnica de Nível Médio',mod:'Aprendizagem Técnica - PRESENCIAL',v:7},
+  {u:'Itumbiara',a:2023,cat:'Educação Técnica de Nível Médio',mod:'Técnico - PRESENCIAL',v:422},
+  {u:'Itumbiara',a:2023,cat:'Educação Técnica de Nível Médio',mod:'Técnico - EAD',v:294},
+  {u:'Itumbiara',a:2023,cat:'Educação Técnica de Nível Médio',mod:'Novo Médio - PRESENCIAL',v:149},
+  {u:'Quirinópolis',a:2023,cat:'Educação para o Trabalho',mod:'Iniciação - PRESENCIAL',v:0},
+  {u:'Quirinópolis',a:2023,cat:'Educação para o Trabalho',mod:'Iniciação - EAD',v:878},
+  {u:'Quirinópolis',a:2023,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - PRESENCIAL',v:593},
+  {u:'Quirinópolis',a:2023,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - EAD',v:56},
+  {u:'Quirinópolis',a:2023,cat:'Formação Inicial e Continuada',mod:'Qualificação - PRESENCIAL',v:276},
+  {u:'Quirinópolis',a:2023,cat:'Formação Inicial e Continuada',mod:'Qualificação - EAD',v:351},
+  {u:'Quirinópolis',a:2023,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - PRESENCIAL',v:935},
+  {u:'Quirinópolis',a:2023,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - EAD',v:109},
+  {u:'Quirinópolis',a:2023,cat:'Educação Técnica de Nível Médio',mod:'Técnico - PRESENCIAL',v:94},
+  {u:'Quirinópolis',a:2023,cat:'Educação Técnica de Nível Médio',mod:'Técnico - EAD',v:64},
+  {u:'Quirinópolis',a:2024,cat:'Educação para o Trabalho',mod:'Iniciação - PRESENCIAL',v:22},
+  {u:'Quirinópolis',a:2024,cat:'Educação para o Trabalho',mod:'Iniciação - EAD',v:831},
+  {u:'Quirinópolis',a:2024,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - PRESENCIAL',v:576},
+  {u:'Quirinópolis',a:2024,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - EAD',v:18},
+  {u:'Quirinópolis',a:2024,cat:'Formação Inicial e Continuada',mod:'Qualificação - PRESENCIAL',v:90},
+  {u:'Quirinópolis',a:2024,cat:'Formação Inicial e Continuada',mod:'Qualificação - EAD',v:189},
+  {u:'Quirinópolis',a:2024,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - PRESENCIAL',v:34},
+  {u:'Quirinópolis',a:2024,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - EAD',v:171},
+  {u:'Quirinópolis',a:2024,cat:'Educação Técnica de Nível Médio',mod:'Técnico - PRESENCIAL',v:87},
+  {u:'Quirinópolis',a:2024,cat:'Educação Técnica de Nível Médio',mod:'Técnico - EAD',v:69},
+  {u:'Quirinópolis',a:2025,cat:'Educação para o Trabalho',mod:'Iniciação - PRESENCIAL',v:0},
+  {u:'Quirinópolis',a:2025,cat:'Educação para o Trabalho',mod:'Iniciação - EAD',v:858},
+  {u:'Quirinópolis',a:2025,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - PRESENCIAL',v:467},
+  {u:'Quirinópolis',a:2025,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - EAD',v:47},
+  {u:'Quirinópolis',a:2025,cat:'Formação Inicial e Continuada',mod:'Qualificação - PRESENCIAL',v:32},
+  {u:'Quirinópolis',a:2025,cat:'Formação Inicial e Continuada',mod:'Qualificação - EAD',v:129},
+  {u:'Quirinópolis',a:2025,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - PRESENCIAL',v:1121},
+  {u:'Quirinópolis',a:2025,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - EAD',v:198},
+  {u:'Quirinópolis',a:2025,cat:'Educação Técnica de Nível Médio',mod:'Técnico - PRESENCIAL',v:45},
+  {u:'Quirinópolis',a:2025,cat:'Educação Técnica de Nível Médio',mod:'Técnico - EAD',v:49},
+  {u:'Quirinópolis',a:2025,cat:'Educação Técnica de Nível Médio',mod:'Novo Médio - SEDUC - PRESENCIAL',v:121},
+  {u:'Quirinópolis',a:2026,cat:'Educação para o Trabalho',mod:'Iniciação - PRESENCIAL',v:0},
+  {u:'Quirinópolis',a:2026,cat:'Educação para o Trabalho',mod:'Iniciação - EAD',v:122},
+  {u:'Quirinópolis',a:2026,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - PRESENCIAL',v:272},
+  {u:'Quirinópolis',a:2026,cat:'Formação Inicial e Continuada',mod:'Aprendizagem Básica - EAD',v:65},
+  {u:'Quirinópolis',a:2026,cat:'Formação Inicial e Continuada',mod:'Qualificação - PRESENCIAL',v:51},
+  {u:'Quirinópolis',a:2026,cat:'Formação Inicial e Continuada',mod:'Qualificação - EAD',v:73},
+  {u:'Quirinópolis',a:2026,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - PRESENCIAL',v:79},
+  {u:'Quirinópolis',a:2026,cat:'Formação Inicial e Continuada',mod:'Aperfeiçoamento - EAD',v:45},
+  {u:'Quirinópolis',a:2026,cat:'Educação Técnica de Nível Médio',mod:'Técnico - PRESENCIAL',v:21},
+  {u:'Quirinópolis',a:2026,cat:'Educação Técnica de Nível Médio',mod:'Técnico - EAD',v:34},
+  {u:'Quirinópolis',a:2026,cat:'Educação Técnica de Nível Médio',mod:'Novo Médio - SEDUC - PRESENCIAL',v:172},
+];
+
+/* ======================================================
+   UTILITÁRIOS
+====================================================== */
+const CH = {};
+const fmt = n => Math.round(n).toLocaleString('pt-BR');
+const fmtPct = n => (Math.round(n*10)/10).toFixed(1).replace('.',',')+' %';
+const C = {blue:'#1d4ed8',green:'#059669',red:'#dc2626',amber:'#d97706',purple:'#7c3aed',teal:'#0891b2',indigo:'#4338ca',orange:'#ea580c',gray:'#94a3b8'};
+const ANOS = [2023,2024,2025,2026];
+const CATS = ['Educação para o Trabalho','Formação Inicial e Continuada','Educação Técnica de Nível Médio'];
+const CATS_SHORT = ['Ed. Trabalho','FIC','Ed. Técnica'];
+const CAT_COLORS = [C.orange, C.blue, C.purple];
+const ANO_COLORS = {'2023':'#94a3b8','2024':'#f59e0b','2025':'#3b82f6','2026':'#dc2626'};
+
+function dc(id){if(CH[id]){CH[id].destroy();delete CH[id];}}
+function mkLegend(el, items){el.innerHTML=items.map(x=>`<span class="legend-item"><span class="legend-dot" style="background:${x.c}"></span>${x.l}</span>`).join('');}
+function mkInsight(el, items){el.innerHTML=items.map(x=>`<div class="insight-card"><div class="i-title">${x.t}</div><div class="i-text">${x.v}</div></div>`).join('');}
+function drawSpark(id, data, color){
+  const cv=document.getElementById(id),ctx=cv.getContext('2d');
+  const W=160,H=28;cv.width=W;cv.height=H;
+  const mn=Math.min(...data),mx=Math.max(...data),r=mx-mn||1;
+  const pts=data.map((v,i)=>({x:i*(W-1)/(data.length-1),y:H-2-(v-mn)/r*(H-6)}));
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle=color;ctx.lineWidth=1.8;ctx.stroke();
+  pts.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();});
+}
+
+function drawGauge(id, pct, color1, color2){
+  const cv=document.getElementById(id),ctx=cv.getContext('2d');
+  const W=240,H=140,cx=120,cy=120,r=95,lw=18;
+  ctx.clearRect(0,0,W,H);
+  ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,2*Math.PI);ctx.strokeStyle='#e2e8f0';ctx.lineWidth=lw;ctx.stroke();
+  const p=Math.min(pct/100,1);
+  if(p>0){
+    ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,Math.PI+p*Math.PI);
+    const g=ctx.createLinearGradient(cx-r,0,cx+r,0);g.addColorStop(0,color1);g.addColorStop(1,color2||color1);
+    ctx.strokeStyle=g;ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();
+  }
+  const na=Math.PI+p*Math.PI;
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(na)*74,cy+Math.sin(na)*74);
+  ctx.strokeStyle='#1e293b';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,6,0,2*Math.PI);ctx.fillStyle='#1e293b';ctx.fill();
+  ctx.font='bold 10px Arial';ctx.fillStyle='#94a3b8';ctx.textAlign='center';
+  ctx.fillText('0%',cx-r-2,cy+16);ctx.fillText('100%',cx+r+2,cy+16);
+}
+
+/* ======================================================
+   TAB NAVIGATION
+====================================================== */
+function showTab(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+/* ======================================================
+   SEÇÃO 1 — HISTÓRICO
+====================================================== */
+function getS1Filters(){return{u:document.getElementById('s1-unidade').value,a:document.getElementById('s1-ano').value};}
+function resetS1(){['s1-unidade','s1-ano'].forEach(x=>document.getElementById(x).value='all');renderS1();}
+
+function filterHist(f){
+  return HIST.filter(d=>(f.u==='all'||d.u===f.u)&&(f.a==='all'||d.a===parseInt(f.a)));
+}
+
+function renderS1(){
+  const f=getS1Filters();
+  const data=filterHist(f);
+  const unidades=f.u==='all'?['Itumbiara','Quirinópolis']:[f.u];
+  const anos=f.a==='all'?ANOS:[parseInt(f.a)];
+
+  const totMat=data.reduce((s,d)=>s+d.m,0);
+  const totConc=data.reduce((s,d)=>s+d.c,0);
+  const totEv=data.reduce((s,d)=>s+d.e,0);
+  const taxaConc=totMat>0?totConc/totMat*100:0;
+  const taxaEv=totMat>0?totEv/totMat*100:0;
+
+  document.getElementById('s1k-mat').textContent=fmt(totMat);
+  document.getElementById('s1k-conc').textContent=fmt(totConc);
+  document.getElementById('s1k-conc-taxa').textContent=fmtPct(taxaConc);
+  document.getElementById('s1k-ev').textContent=fmt(totEv);
+  document.getElementById('s1k-ev-taxa').textContent=fmtPct(taxaEv);
+  document.getElementById('s1k-ef').textContent=fmtPct(taxaConc);
+  const efTrend=document.getElementById('s1k-ef-trend');
+  efTrend.textContent=taxaConc>=60?'Eficiência boa':taxaConc>=40?'Eficiência moderada':'Atenção: baixa eficiência';
+  efTrend.className='k-trend '+(taxaConc>=60?'trend-up':taxaConc>=40?'trend-warn':'trend-down');
+
+  const sparkConc=ANOS.map(a=>HIST.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===a).reduce((s,d)=>s+d.c,0));
+  const sparkEv=ANOS.map(a=>HIST.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===a).reduce((s,d)=>s+d.e,0));
+  drawSpark('sp-conc',sparkConc,C.green);
+  drawSpark('sp-ev',sparkEv,C.red);
+
+  const bestAno=ANOS.reduce((best,a)=>{const h=HIST.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===a);const t=h.reduce((s,d)=>s+d.m,0);return t>best.v?{a,v:t}:best},{a:null,v:-1});
+  const worstEv=ANOS.reduce((worst,a)=>{const h=HIST.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===a);const m=h.reduce((s,d)=>s+d.m,0);const e=h.reduce((s,d)=>s+d.e,0);const t=m>0?e/m*100:0;return t>worst.v?{a,v:t}:worst},{a:null,v:-1});
+  const bestEf=ANOS.reduce((best,a)=>{const h=HIST.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===a);const m=h.reduce((s,d)=>s+d.m,0);const c=h.reduce((s,d)=>s+d.c,0);const t=m>0?c/m*100:0;return t>best.v?{a,v:t}:best},{a:null,v:-1});
+  mkInsight(document.getElementById('s1-insights'),[
+    {t:'Melhor Ano em Volume',v:`<strong>${bestAno.a}</strong> registrou o maior volume de matrículas: <strong>${fmt(bestAno.v)}</strong>`},
+    {t:'Ano com Maior Evasão',v:`<strong>${worstEv.a}</strong> apresentou a maior taxa de evasão: <strong>${fmtPct(worstEv.v)}</strong>`},
+    {t:'Melhor Eficiência',v:`<strong>${bestEf.a}</strong> teve a maior taxa de conclusão: <strong>${fmtPct(bestEf.v)}</strong>`},
+  ]);
+
+  // Chart 1 — barras agrupadas por ano
+  dc('s1c1');
+  const dsC1=unidades.map((u,ui)=>[
+    {label:u+' Mat.',data:anos.map(a=>{const h=HIST.find(d=>d.u===u&&d.a===a);return h?h.m:0;}),backgroundColor:ui===0?C.blue+'bb':C.teal+'bb',borderRadius:3,borderColor:ui===0?C.blue:C.teal,borderWidth:1},
+    {label:u+' Conc.',data:anos.map(a=>{const h=HIST.find(d=>d.u===u&&d.a===a);return h?h.c:0;}),backgroundColor:ui===0?C.green+'bb':'#10b981bb',borderRadius:3,borderColor:ui===0?C.green:'#10b981',borderWidth:1},
+    {label:u+' Evasões',data:anos.map(a=>{const h=HIST.find(d=>d.u===u&&d.a===a);return h?h.e:0;}),backgroundColor:ui===0?C.red+'bb':C.orange+'bb',borderRadius:3,borderColor:ui===0?C.red:C.orange,borderWidth:1},
+  ]).flat();
+  mkLegend(document.getElementById('s1-leg1'),[{c:C.blue,l:'Itu. Matríc.'},{c:C.green,l:'Itu. Conc.'},{c:C.red,l:'Itu. Evasões'},{c:C.teal,l:'Quir. Matríc.'},{c:'#10b981',l:'Quir. Conc.'},{c:C.orange,l:'Quir. Evasões'}]);
+  CH['s1c1']=new Chart(document.getElementById('s1c1'),{type:'bar',data:{labels:anos.map(String),datasets:dsC1},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},scales:{x:{grid:{display:false},ticks:{color:'#64748b'}},y:{grid:{color:'#f1f5f9'},ticks:{color:'#64748b',callback:v=>fmt(v)},beginAtZero:true}}}});
+
+  // Chart 2 — donut unidades
+  dc('s1c2');
+  const matPorU=unidades.map(u=>data.filter(d=>d.u===u).reduce((s,d)=>s+d.m,0));
+  mkLegend(document.getElementById('s1-leg2'),unidades.map((u,i)=>({c:i===0?C.blue:C.teal,l:`${u} ${matPorU[0]+matPorU[1]>0?fmtPct(matPorU[i]/(matPorU[0]+matPorU[1])*100):'0%'}`})));
+  CH['s1c2']=new Chart(document.getElementById('s1c2'),{type:'doughnut',data:{labels:unidades,datasets:[{data:matPorU,backgroundColor:[C.blue+'cc',C.teal+'cc'],borderColor:[C.blue,C.teal],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmt(ctx.raw)}`}}}}});
+
+  // Chart 3 — taxa conclusão por unidade e ano
+  dc('s1c3');
+  const labTaxa=[],dataTaxa=[],colorsTaxa=[];
+  unidades.forEach(u=>{anos.forEach(a=>{const h=HIST.find(d=>d.u===u&&d.a===a);if(!h)return;const t=h.m>0?h.c/h.m*100:0;labTaxa.push(u.slice(0,4)+' '+a);dataTaxa.push(Math.round(t*10)/10);colorsTaxa.push(t>=60?C.green+'cc':t>=40?C.amber+'cc':C.red+'cc');});});
+  CH['s1c3']=new Chart(document.getElementById('s1c3'),{type:'bar',data:{labels:labTaxa,datasets:[{label:'Taxa %',data:dataTaxa,backgroundColor:colorsTaxa,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtPct(ctx.raw)}}},scales:{x:{grid:{display:false},ticks:{color:'#64748b',font:{size:10},maxRotation:40}},y:{max:100,grid:{color:'#f1f5f9'},ticks:{color:'#64748b',callback:v=>v+'%'},beginAtZero:true}}}});
+
+  // Chart 4 — evasão tendência
+  dc('s1c4');
+  mkLegend(document.getElementById('s1-leg4'),[{c:C.red,l:'Evasões (barras)'},{c:C.orange,l:'Taxa evasão % (linha)'}]);
+  const evAnos=anos.map(a=>HIST.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===a).reduce((s,d)=>s+d.e,0));
+  const matAnos=anos.map(a=>HIST.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===a).reduce((s,d)=>s+d.m,0));
+  const taxaEvAnos=matAnos.map((m,i)=>m>0?Math.round(evAnos[i]/m*1000)/10:0);
+  CH['s1c4']=new Chart(document.getElementById('s1c4'),{type:'bar',data:{labels:anos.map(String),datasets:[{type:'bar',label:'Evasões',data:evAnos,backgroundColor:C.red+'99',borderColor:C.red,borderWidth:1,borderRadius:4,yAxisID:'y'},{type:'line',label:'Taxa %',data:taxaEvAnos,borderColor:C.orange,borderWidth:2,pointRadius:4,fill:false,yAxisID:'y2',tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},scales:{x:{grid:{display:false},ticks:{color:'#64748b'}},y:{grid:{color:'#f1f5f9'},ticks:{color:'#64748b',callback:v=>fmt(v)},beginAtZero:true},y2:{grid:{display:false},ticks:{color:C.orange,callback:v=>v+'%'},beginAtZero:true,position:'right'}}}});
+
+  // Chart 5 — evolução consolidada linhas
+  dc('s1c5');
+  mkLegend(document.getElementById('s1-leg5'),[{c:C.blue,l:'Matrículas'},{c:C.green,l:'Concluintes'},{c:C.red,l:'Evasões'}]);
+  const matAnos2=ANOS.map(a=>HIST.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===a).reduce((s,d)=>s+d.m,0));
+  const concAnos2=ANOS.map(a=>HIST.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===a).reduce((s,d)=>s+d.c,0));
+  const evAnos2=ANOS.map(a=>HIST.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===a).reduce((s,d)=>s+d.e,0));
+  CH['s1c5']=new Chart(document.getElementById('s1c5'),{type:'line',data:{labels:ANOS.map(String),datasets:[{label:'Matrículas',data:matAnos2,borderColor:C.blue,backgroundColor:C.blue+'22',borderWidth:2.5,pointRadius:5,fill:true,tension:.35},{label:'Concluintes',data:concAnos2,borderColor:C.green,borderWidth:2,pointRadius:5,fill:false,tension:.35},{label:'Evasões',data:evAnos2,borderColor:C.red,borderWidth:2,pointRadius:5,fill:false,borderDash:[5,4],tension:.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},scales:{x:{grid:{display:false},ticks:{color:'#64748b'}},y:{grid:{color:'#f1f5f9'},ticks:{color:'#64748b',callback:v=>fmt(v)},beginAtZero:true}}}});
+
+  const st=[];if(f.u!=='all')st.push(f.u);if(f.a!=='all')st.push(f.a);document.getElementById('s1-status').textContent=st.length?'Filtros: '+st.join(' · '):'';
+}
+
+/* ======================================================
+   SEÇÃO 2 — MATRÍCULAS NOVAS 2026
+====================================================== */
+function getS2Filters(){return{u:document.getElementById('s2-unidade').value,p:document.getElementById('s2-periodo').value};}
+function resetS2(){['s2-unidade','s2-periodo'].forEach(x=>document.getElementById(x).value=x==='s2-periodo'?'real':'all');renderS2();}
+
+function getMatData(f){
+  const uns=f.u==='all'?['Itumbiara','Quirinópolis']:[f.u];
+  return uns.map(u=>({u,d:MAT[u]}));
+}
+
+function renderS2(){
+  const f=getS2Filters();
+  const mData=getMatData(f);
+  const reaisMeses=MESES.slice(0,4);
+  const totalReal=mData.reduce((s,{d})=>s+reaisMeses.reduce((ss,m)=>ss+d[m].r,0),0);
+  const totalMeta=mData.reduce((s,{d})=>s+MESES.reduce((ss,m)=>ss+d[m].m,0),0);
+  const pct=totalMeta>0?totalReal/totalMeta*100:0;
+  const gap=totalMeta-totalReal;
+  const mesesRest=8;
+  const velMedia=totalReal/4;
+
+  document.getElementById('s2k-meta').textContent=fmt(totalMeta);
+  document.getElementById('s2k-real').textContent=fmt(totalReal);
+  document.getElementById('s2k-pct').textContent=fmtPct(pct);
+  document.getElementById('s2-prog').style.width=Math.min(pct,100)+'%';
+  document.getElementById('s2-prog').style.background=pct>=80?C.green:pct>=50?C.amber:C.red;
+  document.getElementById('s2-prog-gap').textContent='Gap: '+fmt(gap);
+  document.getElementById('s2k-gap').textContent=fmt(gap);
+  document.getElementById('s2k-gap-mensal').textContent=fmt(Math.ceil(gap/mesesRest))+'/mês necessário';
+  document.getElementById('s2k-vel').textContent=fmt(velMedia);
+  const velTrend=document.getElementById('s2k-vel-trend');
+  const metaMedMes=totalMeta/12;
+  velTrend.textContent=velMedia>=metaMedMes?'Acima do ritmo necessário':'Abaixo do ritmo necessário';
+  velTrend.className='k-trend '+(velMedia>=metaMedMes?'trend-up':'trend-down');
+
+  // Stats por unidade para gauge
+  const ituReal=reaisMeses.reduce((s,m)=>s+MAT.Itumbiara[m].r,0);
+  const ituMeta=MESES.reduce((s,m)=>s+MAT.Itumbiara[m].m,0);
+  const quiReal=reaisMeses.reduce((s,m)=>s+MAT.Quirinópolis[m].r,0);
+  const quiMeta=MESES.reduce((s,m)=>s+MAT.Quirinópolis[m].m,0);
+  if(f.u==='all'||f.u==='Itumbiara'){document.getElementById('g2-itu-r').textContent=fmt(ituReal);document.getElementById('g2-itu-m').textContent=fmt(ituMeta);}
+  if(f.u==='all'||f.u==='Quirinópolis'){document.getElementById('g2-qui-r').textContent=fmt(quiReal);document.getElementById('g2-qui-m').textContent=fmt(quiMeta);}
+
+  drawGauge('s2-gauge',pct,C.red,C.green);
+  document.getElementById('s2-gauge-pct').textContent=fmtPct(pct);
+
+  const realPorMes=MESES.reduce((acc,m)=>{acc[m]=mData.reduce((s,{d})=>s+d[m].r,0);return acc;},{});
+  const metaPorMes=MESES.reduce((acc,m)=>{acc[m]=mData.reduce((s,{d})=>s+d[m].m,0);return acc;},{});
+
+  mkInsight(document.getElementById('s2-insights'),[
+    {t:'Melhor Mês Realizado',v:`<strong>${MESES.slice(0,4).reduce((b,m)=>realPorMes[m]>realPorMes[b]?m:b,'jan').toUpperCase()}</strong> foi o mês com maior volume realizado: <strong>${fmt(Math.max(...MESES.slice(0,4).map(m=>realPorMes[m])))}</strong>`},
+    {t:'Ritmo Necessário',v:`Para atingir 100% da meta, precisa de <strong>${fmt(Math.ceil(gap/mesesRest))}/mês</strong> nos próximos <strong>8 meses</strong>`},
+    {t:'Status Atual',v:`Velocidade média atual de <strong>${fmt(velMedia)}/mês</strong> é <strong>${velMedia>=metaMedMes?'suficiente':'insuficiente'}</strong> para a meta (necessário: ${fmt(Math.ceil(metaMedMes))}/mês)`},
+  ]);
+
+  // Chart S2C1 — barras meta vs realizado mensal
+  dc('s2c1');
+  mkLegend(document.getElementById('s2-leg1'),[{c:C.blue,l:'Realizado'},{c:C.red,l:'Meta do mês'}]);
+  CH['s2c1']=new Chart(document.getElementById('s2c1'),{type:'bar',data:{labels:MESES.map(m=>m[0].toUpperCase()+m.slice(1)),datasets:[{type:'bar',label:'Realizado',data:MESES.map((m,i)=>i<4?realPorMes[m]:null),backgroundColor:C.blue+'aa',borderColor:C.blue,borderWidth:1,borderRadius:4,order:2},{type:'line',label:'Meta',data:MESES.map(m=>metaPorMes[m]),borderColor:C.red,borderWidth:2,pointRadius:3,borderDash:[5,4],fill:false,tension:.3,order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',callbacks:{label:ctx=>ctx.dataset.label+': '+(ctx.raw!==null?fmt(ctx.raw):'—')}}},scales:{x:{grid:{display:false},ticks:{color:'#64748b',font:{size:11}}},y:{grid:{color:'#f1f5f9'},ticks:{color:'#64748b',callback:v=>fmt(v)},beginAtZero:true}}}});
+
+  // Chart S2C2 — acumulado
+  dc('s2c2');
+  let cr=0,cm=0;
+  const realAcum=MESES.map((m,i)=>{if(i>=4)return null;cr+=realPorMes[m];return cr;});
+  const metaAcum=MESES.map(m=>{cm+=metaPorMes[m];return cm;});
+  mkLegend(document.getElementById('s2-leg2'),[{c:C.blue,l:'Realizado acumulado'},{c:C.red,l:'Meta acumulada'}]);
+  CH['s2c2']=new Chart(document.getElementById('s2c2'),{type:'line',data:{labels:MESES.map(m=>m[0].toUpperCase()+m.slice(1)),datasets:[{label:'Realizado',data:realAcum,borderColor:C.blue,backgroundColor:C.blue+'22',borderWidth:2.5,pointRadius:4,fill:true,tension:.35,spanGaps:false},{label:'Meta Acum.',data:metaAcum,borderColor:C.red,borderWidth:2,pointRadius:3,fill:false,borderDash:[5,4],tension:.35}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index',callbacks:{label:ctx=>ctx.dataset.label+': '+(ctx.raw!==null?fmt(ctx.raw):'—')}}},scales:{x:{grid:{display:false},ticks:{color:'#64748b',font:{size:11}}},y:{grid:{color:'#f1f5f9'},ticks:{color:'#64748b',callback:v=>fmt(v)},beginAtZero:true}}}});
+
+  // Chart S2C3 — gap mensal por unidade
+  dc('s2c3');
+  const uns2=f.u==='all'?['Itumbiara','Quirinópolis']:[f.u];
+  const gapDs=uns2.map((u,i)=>({label:u,data:MESES.map((m,mi)=>{const d=MAT[u];if(mi<4)return Math.max(0,d[m].m-d[m].r);return d[m].m;}),backgroundColor:i===0?C.red+'99':C.orange+'99',borderColor:i===0?C.red:C.orange,borderWidth:1,borderRadius:3}));
+  mkLegend(document.getElementById('s2-leg3'),uns2.map((u,i)=>({c:i===0?C.red:C.orange,l:u})));
+  CH['s2c3']=new Chart(document.getElementById('s2c3'),{type:'bar',data:{labels:MESES.map(m=>m[0].toUpperCase()+m.slice(1)),datasets:gapDs},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},scales:{x:{grid:{display:false},ticks:{color:'#64748b',font:{size:11}}},y:{grid:{color:'#f1f5f9'},ticks:{color:'#64748b',callback:v=>fmt(v)},beginAtZero:true}}}});
+
+  // Chart S2C4 — % atingimento por mês por unidade
+  dc('s2c4');
+  const uns3=f.u==='all'?['Itumbiara','Quirinópolis']:[f.u];
+  const pctDs=uns3.map((u,i)=>({label:u,data:MESES.slice(0,4).map(m=>MAT[u][m].m>0?Math.round(MAT[u][m].r/MAT[u][m].m*1000)/10:0),borderColor:i===0?C.blue:C.teal,backgroundColor:i===0?C.blue+'22':C.teal+'22',borderWidth:2,pointRadius:4,fill:true,tension:.3}));
+  CH['s2c4']=new Chart(document.getElementById('s2c4'),{type:'line',data:{labels:MESES.slice(0,4).map(m=>m[0].toUpperCase()+m.slice(1)),datasets:pctDs},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{boxWidth:10,font:{size:11},color:'#475569'}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmtPct(ctx.raw)}}},scales:{x:{grid:{display:false},ticks:{color:'#64748b'}},y:{grid:{color:'#f1f5f9'},ticks:{color:'#64748b',callback:v=>v+'%'},beginAtZero:true,max:200}}}});
+
+  // Chart S2C5 — donut distribuição meta por unidade
+  dc('s2c5');
+  const metaItu=MESES.reduce((s,m)=>s+MAT.Itumbiara[m].m,0);
+  const metaQui=MESES.reduce((s,m)=>s+MAT.Quirinópolis[m].m,0);
+  const totM=metaItu+metaQui;
+  mkLegend(document.getElementById('s2-leg5'),[{c:C.blue,l:`Itumbiara ${fmtPct(metaItu/totM*100)}`},{c:C.teal,l:`Quirinópolis ${fmtPct(metaQui/totM*100)}`}]);
+  CH['s2c5']=new Chart(document.getElementById('s2c5'),{type:'doughnut',data:{labels:['Itumbiara','Quirinópolis'],datasets:[{data:[metaItu,metaQui],backgroundColor:[C.blue+'cc',C.teal+'cc'],borderColor:[C.blue,C.teal],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmt(ctx.raw)} (${fmtPct(ctx.raw/totM*100)})`}}}}});
+
+  const st=[];if(f.u!=='all')st.push(f.u);document.getElementById('s2-status').textContent=st.length?'Filtros: '+st.join(' · '):'';
+}
+
+/* ======================================================
+   SEÇÃO 3 — PRODUÇÃO DETALHADA
+====================================================== */
+function getS3Filters(){return{u:document.getElementById('s3-unidade').value,a:document.getElementById('s3-ano').value,cat:document.getElementById('s3-cat').value,mod:document.getElementById('s3-mod').value};}
+function resetS3(){['s3-unidade','s3-ano','s3-cat','s3-mod'].forEach(x=>document.getElementById(x).value='all');renderS3();}
+
+function filterProd(f){
+  return PROD.filter(d=>(f.u==='all'||d.u===f.u)&&(f.a==='all'||d.a===parseInt(f.a))&&(f.cat==='all'||d.cat===f.cat)&&(f.mod==='all'||d.mod.includes(f.mod)));
+}
+
+function renderS3(){
+  const f=getS3Filters();
+  const data=filterProd(f);
+  const totMat=data.reduce((s,d)=>s+d.v,0);
+  const catsAtivas=new Set(data.filter(d=>d.v>0).map(d=>d.cat)).size;
+  const grouped={};data.forEach(d=>{grouped[d.mod]=(grouped[d.mod]||0)+d.v;});
+  const topMod=Object.entries(grouped).sort((a,b)=>b[1]-a[1])[0]||['—',0];
+
+  let yoyPct=0,yoyLabel='—';
+  if(f.a!=='all'){
+    const anoAtual=parseInt(f.a),anoAnt=anoAtual-1;
+    const atualData=PROD.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===anoAtual&&(f.cat==='all'||d.cat===f.cat)&&(f.mod==='all'||d.mod.includes(f.mod)));
+    const antData=PROD.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===anoAnt&&(f.cat==='all'||d.cat===f.cat)&&(f.mod==='all'||d.mod.includes(f.mod)));
+    const ta=atualData.reduce((s,d)=>s+d.v,0),tb=antData.reduce((s,d)=>s+d.v,0);
+    yoyPct=tb>0?(ta-tb)/tb*100:0;yoyLabel=fmtPct(yoyPct);
+  }
+
+  document.getElementById('s3k-mat').textContent=fmt(totMat);
+  document.getElementById('s3k-cats').textContent=catsAtivas;
+  document.getElementById('s3k-top').textContent=topMod[0].replace(' - PRESENCIAL',' Pres.').replace(' - EAD',' EAD');
+  document.getElementById('s3k-top-vol').textContent='Volume: '+fmt(topMod[1]);
+  document.getElementById('s3k-yoy').textContent=yoyLabel;
+  const yoyTrend=document.getElementById('s3k-yoy-trend');
+  yoyTrend.textContent=f.a==='all'?'Selecione um ano':yoyPct>=0?'Crescimento vs. ano ant.':'Queda vs. ano ant.';
+  yoyTrend.className='k-trend '+(f.a==='all'?'trend-neutral':yoyPct>=0?'trend-up':'trend-down');
+
+  const totPres=data.filter(d=>d.mod.includes('PRESENCIAL')).reduce((s,d)=>s+d.v,0);
+  const totEAD=data.filter(d=>d.mod.includes('EAD')).reduce((s,d)=>s+d.v,0);
+  const topCat=CATS.map(c=>({c,v:data.filter(d=>d.cat===c).reduce((s,d)=>s+d.v,0)})).sort((a,b)=>b.v-a.v)[0]||{c:'—',v:0};
+  mkInsight(document.getElementById('s3-insights'),[
+    {t:'Categoria Dominante',v:`<strong>${topCat.c}</strong> concentra o maior volume com <strong>${fmt(topCat.v)}</strong> matrículas no período`},
+    {t:'Mix de Modalidade',v:`EAD representa <strong>${totMat>0?fmtPct(totEAD/totMat*100):'—'}</strong> do total · Presencial: <strong>${totMat>0?fmtPct(totPres/totMat*100):'—'}</strong>`},
+    {t:'Crescimento YoY',v:f.a==='all'?'Selecione um <strong>ano</strong> para ver variação vs. período anterior':`Variação 2026 vs 2025: <strong>${yoyLabel}</strong>`},
+  ]);
+
+  const anos3=f.a==='all'?ANOS:[parseInt(f.a)];
+
+  // S3C1 — categorias por ano (barras empilhadas)
+  dc('s3c1');
+  mkLegend(document.getElementById('s3-leg1'),CATS_SHORT.map((c,i)=>({c:CAT_COLORS[i],l:c})));
+  CH['s3c1']=new Chart(document.getElementById('s3c1'),{type:'bar',data:{labels:anos3.map(String),datasets:CATS.map((cat,i)=>({label:CATS_SHORT[i],data:anos3.map(a=>PROD.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===a&&d.cat===cat&&(f.mod==='all'||d.mod.includes(f.mod))).reduce((s,d)=>s+d.v,0)),backgroundColor:CAT_COLORS[i]+'bb',borderColor:CAT_COLORS[i],borderWidth:1,borderRadius:f.a!=='all'?0:3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},scales:{x:{stacked:true,grid:{display:false},ticks:{color:'#64748b'}},y:{stacked:true,grid:{color:'#f1f5f9'},ticks:{color:'#64748b',callback:v=>fmt(v)},beginAtZero:true}}}});
+
+  // S3C2 — donut categorias
+  dc('s3c2');
+  const catVols=CATS.map(cat=>data.filter(d=>d.cat===cat).reduce((s,d)=>s+d.v,0));
+  mkLegend(document.getElementById('s3-leg2'),CATS_SHORT.map((c,i)=>({c:CAT_COLORS[i],l:`${c} ${totMat>0?fmtPct(catVols[i]/totMat*100):'0%'}`})));
+  CH['s3c2']=new Chart(document.getElementById('s3c2'),{type:'doughnut',data:{labels:CATS_SHORT,datasets:[{data:catVols,backgroundColor:CAT_COLORS.map(c=>c+'cc'),borderColor:CAT_COLORS,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmt(ctx.raw)} (${totMat>0?fmtPct(ctx.raw/totMat*100):'0%'})`}}}}});
+
+  // S3C3 — presencial vs EAD por ano
+  dc('s3c3');
+  mkLegend(document.getElementById('s3-leg3'),[{c:C.blue,l:'Presencial'},{c:C.purple,l:'EAD'}]);
+  CH['s3c3']=new Chart(document.getElementById('s3c3'),{type:'bar',data:{labels:anos3.map(String),datasets:[{label:'Presencial',data:anos3.map(a=>PROD.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===a&&d.mod.includes('PRESENCIAL')&&(f.cat==='all'||d.cat===f.cat)).reduce((s,d)=>s+d.v,0)),backgroundColor:C.blue+'bb',borderColor:C.blue,borderWidth:1,borderRadius:4},{label:'EAD',data:anos3.map(a=>PROD.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===a&&d.mod.includes('EAD')&&(f.cat==='all'||d.cat===f.cat)).reduce((s,d)=>s+d.v,0)),backgroundColor:C.purple+'bb',borderColor:C.purple,borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{mode:'index'}},scales:{x:{grid:{display:false},ticks:{color:'#64748b'}},y:{grid:{color:'#f1f5f9'},ticks:{color:'#64748b',callback:v=>fmt(v)},beginAtZero:true}}}});
+
+  // S3C4 — % EAD por categoria
+  dc('s3c4');
+  const eadPctCat=CATS.map(cat=>{const pres=data.filter(d=>d.cat===cat&&d.mod.includes('PRESENCIAL')).reduce((s,d)=>s+d.v,0);const ead=data.filter(d=>d.cat===cat&&d.mod.includes('EAD')).reduce((s,d)=>s+d.v,0);return pres+ead>0?Math.round(ead/(pres+ead)*1000)/10:0;});
+  CH['s3c4']=new Chart(document.getElementById('s3c4'),{type:'bar',data:{labels:CATS_SHORT,datasets:[{label:'% EAD',data:eadPctCat,backgroundColor:eadPctCat.map(v=>v>=50?C.purple+'bb':C.blue+'66'),borderColor:eadPctCat.map(v=>v>=50?C.purple:C.blue),borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtPct(ctx.raw)}}},scales:{x:{grid:{display:false},ticks:{color:'#64748b',font:{size:11}}},y:{max:100,grid:{color:'#f1f5f9'},ticks:{color:'#64748b',callback:v=>v+'%'},beginAtZero:true}}}});
+
+  // S3C5 — donut pres/EAD
+  dc('s3c5');
+  mkLegend(document.getElementById('s3-leg5'),[{c:C.blue,l:`Presencial ${totMat>0?fmtPct(totPres/totMat*100):'0%'}`},{c:C.purple,l:`EAD ${totMat>0?fmtPct(totEAD/totMat*100):'0%'}`}]);
+  CH['s3c5']=new Chart(document.getElementById('s3c5'),{type:'doughnut',data:{labels:['Presencial','EAD'],datasets:[{data:[totPres,totEAD],backgroundColor:[C.blue+'cc',C.purple+'cc'],borderColor:[C.blue,C.purple],borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmt(ctx.raw)}`}}}}});
+
+  // S3C6 — ranking top tipos
+  dc('s3c6');
+  const sorted=Object.entries(grouped).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const barH=Math.max(280,sorted.length*38+70);
+  document.getElementById('s3c6-wrap').style.height=barH+'px';
+  CH['s3c6']=new Chart(document.getElementById('s3c6'),{type:'bar',data:{labels:sorted.map(([k])=>k.length>32?k.slice(0,30)+'…':k),datasets:[{label:'Matrículas',data:sorted.map(([,v])=>v),backgroundColor:sorted.map((_,i)=>i===0?C.purple+'ee':i<3?C.blue+'bb':C.blue+'66'),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmt(ctx.raw)+' matrículas'}}},scales:{x:{grid:{color:'#f1f5f9'},ticks:{color:'#64748b',callback:v=>fmt(v)},beginAtZero:true},y:{grid:{display:false},ticks:{color:'#64748b',font:{size:11}}}}}});
+
+  // S3C7 — crescimento YoY por categoria
+  dc('s3c7');
+  const yoyData=CATS.map(cat=>{const v25=PROD.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===2025&&d.cat===cat).reduce((s,d)=>s+d.v,0);const v26=PROD.filter(d=>(f.u==='all'||d.u===f.u)&&d.a===2026&&d.cat===cat).reduce((s,d)=>s+d.v,0);return v25>0?Math.round((v26-v25)/v25*1000)/10:0;});
+  CH['s3c7']=new Chart(document.getElementById('s3c7'),{type:'bar',data:{labels:CATS_SHORT,datasets:[{label:'% crescimento YoY',data:yoyData,backgroundColor:yoyData.map(v=>v>=0?C.green+'bb':C.red+'bb'),borderColor:yoyData.map(v=>v>=0?C.green:C.red),borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtPct(ctx.raw)}}},scales:{x:{grid:{display:false},ticks:{color:'#64748b',font:{size:10},maxRotation:20}},y:{grid:{color:'#f1f5f9'},ticks:{color:'#64748b',callback:v=>v+'%'}}}}});
+
+  const st=[];if(f.u!=='all')st.push(f.u);if(f.a!=='all')st.push(f.a);if(f.cat!=='all')st.push('Cat.');if(f.mod!=='all')st.push(f.mod);document.getElementById('s3-status').textContent=st.length?'Filtros: '+st.join(' · '):'';
+}
+
+/* ======================================================
+   INIT
+====================================================== */
+window.addEventListener('load',()=>{renderS1();renderS2();renderS3();});
+</script>
+</body>
+</html>
